@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Florida Alimony Calculator 2023</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .income-section {
+            border: 2px solid #e1e8ed;
+            border-radius: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .income-header {
+            text-align: center;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .name-gender-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .income-input-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .calculator-icon {
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calculator-icon:hover {
+            background: #5a67d8;
+            transform: scale(1.1);
+        }
+
+        .calculate-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .results {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .result-value {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .marriage-type {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .npv-section {
+            border-top: 2px solid #e1e8ed;
+            margin-top: 25px;
+            padding-top: 25px;
+        }
+
+        .npv-header {
+            text-align: center;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .npv-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .legal-disclaimer {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .income-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .income-section-modal {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .income-section-modal h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+
+        .income-line {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .line-number {
+            font-weight: 600;
+            color: #666;
+            width: 25px;
+        }
+
+        .line-description {
+            font-size: 0.9em;
+            color: #2c3e50;
+        }
+
+        .line-input {
+            width: 120px;
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: right;
+        }
+
+        .total-line {
+            border-top: 2px solid #667eea;
+            padding-top: 10px;
+            margin-top: 15px;
+            font-weight: 700;
+        }
+
+        .modal-footer {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 0 0 15px 15px;
+            border-top: 1px solid #e1e8ed;
+            text-align: right;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-prefix {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-weight: 600;
+        }
+
+        .input-group input {
+            padding-left: 35px;
+        }
+
+        /* Print Styles - Single Sheet Court Exhibit */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 12px !important;
+                line-height: 1.3 !important;
+                color: black !important;
+            }
+
+            .container {
+                background: white !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 20px !important;
+                margin: 0 !important;
+                max-width: none !important;
+                width: 100% !important;
+            }
+
+            .header {
+                border-bottom: 2px solid black !important;
+                margin-bottom: 15px !important;
+                padding-bottom: 10px !important;
+            }
+
+            .header h1 {
+                color: black !important;
+                font-size: 18px !important;
+                margin-bottom: 5px !important;
+                background: none !important;
+                -webkit-text-fill-color: initial !important;
+            }
+
+            .header p {
+                color: black !important;
+                font-size: 10px !important;
+            }
+
+            /* Hide form and action buttons in print */
+            .action-buttons,
+            form,
+            .legal-disclaimer,
+            .modal {
+                display: none !important;
+            }
+
+            /* Show only results in print */
+            .results {
+                display: block !important;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .print-header {
+                display: block !important;
+                text-align: center;
+                font-weight: bold;
+                font-size: 14px;
+                margin-bottom: 15px;
+                padding: 10px;
+                border: 2px solid black;
+                background: #f0f0f0;
+            }
+
+            .print-parties {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin-bottom: 15px;
+                padding: 10px;
+                border: 1px solid black;
+            }
+
+            .party-info {
+                text-align: center;
+            }
+
+            .party-info h3 {
+                font-size: 12px;
+                margin-bottom: 5px;
+                text-decoration: underline;
+            }
+
+            .marriage-type {
+                background: #e0e0e0 !important;
+                color: black !important;
+                border: 1px solid black !important;
+                border-radius: 0 !important;
+                margin-bottom: 10px !important;
+                padding: 8px !important;
+                font-size: 11px !important;
+                text-align: center !important;
+            }
+
+            .result-item {
+                display: grid !important;
+                grid-template-columns: 2fr 1fr !important;
+                gap: 10px !important;
+                margin-bottom: 8px !important;
+                padding: 6px 10px !important;
+                background: white !important;
+                border: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                border-left: 3px solid black !important;
+                font-size: 11px !important;
+            }
+
+            .result-label {
+                font-weight: 600 !important;
+                color: black !important;
+            }
+
+            .result-value {
+                font-weight: 700 !important;
+                color: black !important;
+                text-align: right !important;
+                font-size: 11px !important;
+            }
+
+            .npv-section {
+                border-top: 2px solid black !important;
+                margin-top: 15px !important;
+                padding-top: 10px !important;
+            }
+
+            .npv-header {
+                font-size: 12px !important;
+                font-weight: 700 !important;
+                color: black !important;
+                text-align: center !important;
+                margin-bottom: 10px !important;
+                text-decoration: underline;
+            }
+
+            .warning {
+                background: #f0f0f0 !important;
+                border: 1px solid black !important;
+                color: black !important;
+                padding: 8px !important;
+                margin-top: 10px !important;
+                font-size: 10px !important;
+                border-radius: 0 !important;
+            }
+
+            .print-footer {
+                display: block !important;
+                margin-top: 20px;
+                padding-top: 10px;
+                border-top: 1px solid black;
+                font-size: 9px;
+                text-align: center;
+                color: black;
+            }
+
+            /* Ensure single page */
+            * {
+                page-break-inside: avoid !important;
+            }
+
+            .results {
+                page-break-inside: avoid !important;
+            }
+        }
+
+        /* Hide print-only elements from screen */
+        .print-only {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .income-modal-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .npv-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .name-gender-row {
+                grid-template-columns: 1fr;
+            }
+
+            .income-input-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Florida Alimony Calculator 2023</h1>
+            <p>Calculate maximum alimony under Florida's revised statutes (effective July 1, 2023)</p>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn" onclick="saveData()">💾 Save Data</button>
+            <button class="action-btn" onclick="loadData()">📁 Load Data</button>
+            <button class="action-btn" onclick="printToPDF()">🖨️ Print to PDF</button>
+        </div>
+
+        <form id="alimonyForm">
+            <div class="form-grid">
+                <div class="income-section">
+                    <div class="income-header">Higher Earner</div>
+                    <div class="name-gender-row">
+                        <div class="form-group">
+                            <label for="higherEarnerName">Name:</label>
+                            <input type="text" id="higherEarnerName" name="higherEarnerName">
+                        </div>
+                        <div class="form-group">
+                            <label for="higherEarnerGender">Gender:</label>
+                            <select id="higherEarnerGender" name="higherEarnerGender" onchange="updateLowerEarnerGender()">
+                                <option value="">Select</option>
+                                <option value="Husband">Husband</option>
+                                <option value="Wife">Wife</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="higherIncome">Net Monthly Income:</label>
+                        <div class="income-input-row">
+                            <div class="input-group">
+                                <span class="input-prefix">$</span>
+                                <input type="text" id="higherIncome" name="higherIncome" required 
+                                       oninput="formatCurrency(this)" onblur="finalizeCurrency(this)">
+                            </div>
+                            <button type="button" class="calculator-icon" onclick="openIncomeModal('higher')" title="Calculate Net Income">🧮</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="income-section">
+                    <div class="income-header">Lower Earner</div>
+                    <div class="name-gender-row">
+                        <div class="form-group">
+                            <label for="lowerEarnerName">Name:</label>
+                            <input type="text" id="lowerEarnerName" name="lowerEarnerName">
+                        </div>
+                        <div class="form-group">
+                            <label for="lowerEarnerGender">Gender:</label>
+                            <select id="lowerEarnerGender" name="lowerEarnerGender" disabled>
+                                <option value="">Auto-filled</option>
+                                <option value="Husband">Husband</option>
+                                <option value="Wife">Wife</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="lowerIncome">Net Monthly Income:</label>
+                        <div class="income-input-row">
+                            <div class="input-group">
+                                <span class="input-prefix">$</span>
+                                <input type="text" id="lowerIncome" name="lowerIncome" required 
+                                       oninput="formatCurrency(this)" onblur="finalizeCurrency(this)">
+                            </div>
+                            <button type="button" class="calculator-icon" onclick="openIncomeModal('lower')" title="Calculate Net Income">🧮</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="marriageDate">Date of Marriage:</label>
+                    <input type="date" id="marriageDate" name="marriageDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="filingDate">Date of Filing/Petition:</label>
+                    <input type="date" id="filingDate" name="filingDate" required>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="reasonableNeed">Reasonable Monthly Need of Receiving Spouse:</label>
+                    <div class="input-group">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="reasonableNeed" name="reasonableNeed" required 
+                               oninput="formatCurrency(this)" onblur="finalizeCurrency(this)">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="calculate-btn">Calculate Maximum Alimony</button>
+        </form>
+
+        <div id="results" class="results">
+            <div id="marriageType" class="marriage-type"></div>
+            
+            <div class="result-item">
+                <span class="result-label">Years of Marriage:</span>
+                <span class="result-value" id="yearsMarried"></span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">Income Difference (Monthly):</span>
+                <span class="result-value" id="incomeDifference"></span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">35% of Income Difference:</span>
+                <span class="result-value" id="thirtyFivePercent"></span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">Maximum Monthly Alimony Amount:</span>
+                <span class="result-value" id="maxAlimonyAmount"></span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">Maximum Duration of Alimony:</span>
+                <span class="result-value" id="maxDuration"></span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">Total Maximum Alimony Payment:</span>
+                <span class="result-value" id="totalPayment"></span>
+            </div>
+
+            <div class="npv-section">
+                                <div class="npv-header">Net Present Value (NPV) Calculator</div>
+                                <div class="npv-grid">
+                                        <div class="form-group">
+                                                <label for="npvAmount">Monthly Payment Amount:</label>
+                                                <div class="input-group">
+                                                        <span class="input-prefix">$</span>
+                                                        <input type="text" id="npvAmount" name="npvAmount" 
+                                                                     oninput="formatCurrency(this)" onblur="finalizeCurrency(this); calculateNPV()">
+                                                </div>
+                                        </div>
+                                        <div class="form-group">
+                                                <label for="npvYears">Number of Years:</label>
+                                                <input type="number" id="npvYears" name="npvYears" step="0.1" 
+                                                             onchange="calculateNPV()">
+                                        </div>
+                                        <div class="form-group">
+                                                <label for="discountRate">Discount Rate (%):</label>
+                                                <input type="number" id="discountRate" name="discountRate" step="0.1" value="5.0" 
+                                                             onchange="calculateNPV()">
+                                        </div>
+                                </div>
+                                <div class="form-group">
+                                    <label><input type="checkbox" id="annuityDue" checked onchange="calculateNPV()">
+                                        Payments at the beginning of each month (annuity-due)
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label><input type="checkbox" id="effectiveMonthly" checked onchange="calculateNPV()">
+                                        Use effective monthly rate ((1+annual)^(1/12)−1)
+                                    </label>
+                                </div>
+                                <div class="result-item">
+                                        <span class="result-label">Net Present Value (Lump Sum):</span>
+                                        <span class="result-value" id="npvResult">$0.00</span>
+                                </div>
+            </div>
+
+            <div id="warningMessage" class="warning" style="display: none;"></div>
+        </div>
+
+        <div class="legal-disclaimer">
+            <strong>Legal Disclaimer:</strong> This calculator provides estimates based on Florida's 2023 alimony reform statutes. Actual alimony awards may vary based on individual circumstances, statutory factors under F.S. 61.08, and judicial discretion. Courts may deviate from these guidelines based on exceptional circumstances. This tool is for informational purposes only and does not constitute legal advice. Please consult with a qualified Florida family law attorney for personalized legal guidance regarding your specific situation.
+        </div>
+    </div>
+
+    <!-- Income Calculator Modal -->
+    <div id="incomeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Net Income Calculator</h2>
+                <span class="close" onclick="closeIncomeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="income-modal-grid">
+                    <div class="income-section-modal">
+                        <h3>PRESENT MONTHLY GROSS INCOME</h3>
+                        <div class="income-line">
+                            <span class="line-number">1.</span>
+                            <span class="line-description">Gross salary or wages</span>
+                            <input type="text" class="line-input" id="income1" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">2.</span>
+                            <span class="line-description">Bonuses, commissions, allowances, overtime, tips</span>
+                            <input type="text" class="line-input" id="income2" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">3.</span>
+                            <span class="line-description">Business income from self-employment, partnerships, etc.</span>
+                            <input type="text" class="line-input" id="income3" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">4.</span>
+                            <span class="line-description">Disability benefits/SSI</span>
+                            <input type="text" class="line-input" id="income4" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">5.</span>
+                            <span class="line-description">Workers' compensation</span>
+                            <input type="text" class="line-input" id="income5" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">6.</span>
+                            <span class="line-description">Unemployment assistance</span>
+                            <input type="text" class="line-input" id="income6" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">7.</span>
+                            <span class="line-description">Pension, retirement, or annuity payments</span>
+                            <input type="text" class="line-input" id="income7" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">8.</span>
+                            <span class="line-description">Social Security benefits</span>
+                            <input type="text" class="line-input" id="income8" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">9.</span>
+                            <span class="line-description">Alimony actually received</span>
+                            <input type="text" class="line-input" id="income9" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">10.</span>
+                            <span class="line-description">Interest and dividends</span>
+                            <input type="text" class="line-input" id="income10" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">11.</span>
+                            <span class="line-description">Rental income (gross receipts minus expenses)</span>
+                            <input type="text" class="line-input" id="income11" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">12.</span>
+                            <span class="line-description">Income from royalties, trusts, or estates</span>
+                            <input type="text" class="line-input" id="income12" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">13.</span>
+                            <span class="line-description">Reimbursed expenses and in-kind payments</span>
+                            <input type="text" class="line-input" id="income13" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">14.</span>
+                            <span class="line-description">Gains from dealing in property</span>
+                            <input type="text" class="line-input" id="income14" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">15.</span>
+                            <span class="line-description">Any other income of a recurring nature</span>
+                            <input type="text" class="line-input" id="income15" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line total-line">
+                            <span class="line-number">17.</span>
+                            <span class="line-description"><strong>TOTAL PRESENT MONTHLY GROSS INCOME</strong></span>
+                            <input type="text" class="line-input" id="totalGrossIncome" readonly style="font-weight: bold; background: #f0f0f0;">
+                        </div>
+                    </div>
+
+                    <div class="income-section-modal">
+                        <h3>PRESENT MONTHLY DEDUCTIONS</h3>
+                        <div class="income-line">
+                            <span class="line-number">18.</span>
+                            <span class="line-description">Federal, state, and local income tax</span>
+                            <input type="text" class="line-input" id="deduction18" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">19.</span>
+                            <span class="line-description">FICA or self-employment taxes</span>
+                            <input type="text" class="line-input" id="deduction19" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">20.</span>
+                            <span class="line-description">Medicare payments</span>
+                            <input type="text" class="line-input" id="deduction20" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">21.</span>
+                            <span class="line-description">Mandatory union dues</span>
+                            <input type="text" class="line-input" id="deduction21" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">22.</span>
+                            <span class="line-description">Mandatory retirement payments</span>
+                            <input type="text" class="line-input" id="deduction22" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">23.</span>
+                            <span class="line-description">Health insurance payments</span>
+                            <input type="text" class="line-input" id="deduction23" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">24.</span>
+                            <span class="line-description">Court-ordered child support actually paid</span>
+                            <input type="text" class="line-input" id="deduction24" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line">
+                            <span class="line-number">25.</span>
+                            <span class="line-description">Court-ordered alimony actually paid</span>
+                            <input type="text" class="line-input" id="deduction25" oninput="formatModalCurrency(this)" onblur="finalizeModalCurrency(this); calculateModalNet()">
+                        </div>
+                        <div class="income-line total-line">
+                            <span class="line-number">26.</span>
+                            <span class="line-description"><strong>TOTAL DEDUCTIONS</strong></span>
+                            <input type="text" class="line-input" id="totalDeductions" readonly style="font-weight: bold; background: #f0f0f0;">
+                        </div>
+                        <div class="income-line total-line" style="border-top: 3px solid #667eea; margin-top: 20px; padding-top: 15px;">
+                            <span class="line-number"></span>
+                            <span class="line-description"><strong>NET MONTHLY INCOME</strong></span>
+                            <input type="text" class="line-input" id="modalNetIncome" readonly style="font-weight: bold; background: #667eea; color: white;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="applyModalIncome()">Apply to Main Calculator</button>
+                <button class="action-btn" onclick="closeIncomeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for loading data -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileLoad(event)">
+
+    <script>
+        let currentModalTarget = '';
+
+        // Currency formatting functions
+        function formatCurrency(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            if (value) {
+                value = parseInt(value).toLocaleString();
+                input.value = value;
+            }
+        }
+
+        function finalizeCurrency(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            if (value) {
+                let numValue = parseInt(value);
+                input.value = '$' + numValue.toLocaleString('en-US', {minimumFractionDigits: 2});
+            }
+        }
+
+        function formatModalCurrency(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            if (value) {
+                value = parseInt(value).toLocaleString();
+                input.value = value;
+            }
+        }
+
+        function finalizeModalCurrency(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            if (value) {
+                let numValue = parseInt(value);
+                input.value = numValue.toLocaleString('en-US');
+            }
+        }
+
+        function parseCurrency(value) {
+            return parseFloat(String(value).replace(/[$,]/g, '')) || 0;
+        }
+
+        // --- Currency formatting helper for two decimals everywhere ---
+        function fmtMoney(x) {
+            return '$' + Number(x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Gender selection logic
+        function updateLowerEarnerGender() {
+            const higherGender = document.getElementById('higherEarnerGender').value;
+            const lowerGenderSelect = document.getElementById('lowerEarnerGender');
+            
+            if (higherGender === 'Husband') {
+                lowerGenderSelect.value = 'Wife';
+            } else if (higherGender === 'Wife') {
+                lowerGenderSelect.value = 'Husband';
+            } else {
+                lowerGenderSelect.value = '';
+            }
+        }
+
+        // Income modal functions
+        function openIncomeModal(target) {
+            currentModalTarget = target;
+            document.getElementById('modalTitle').textContent = 
+                `Net Income Calculator - ${target === 'higher' ? 'Higher' : 'Lower'} Earner`;
+            document.getElementById('incomeModal').style.display = 'block';
+            
+            // Clear all modal inputs
+            clearModalInputs();
+        }
+
+        function closeIncomeModal() {
+            document.getElementById('incomeModal').style.display = 'none';
+        }
+
+        function clearModalInputs() {
+            for (let i = 1; i <= 15; i++) {
+                document.getElementById(`income${i}`).value = '';
+            }
+            for (let i = 18; i <= 25; i++) {
+                document.getElementById(`deduction${i}`).value = '';
+            }
+            document.getElementById('totalGrossIncome').value = '';
+            document.getElementById('totalDeductions').value = '';
+            document.getElementById('modalNetIncome').value = '';
+        }
+
+        function calculateModalNet() {
+            let totalGross = 0;
+            let totalDeductions = 0;
+
+            // Calculate gross income
+            for (let i = 1; i <= 15; i++) {
+                const value = document.getElementById(`income${i}`).value;
+                totalGross += parseCurrency(value);
+            }
+
+            // Calculate deductions
+            for (let i = 18; i <= 25; i++) {
+                const value = document.getElementById(`deduction${i}`).value;
+                totalDeductions += parseCurrency(value);
+            }
+
+            // Update totals
+            document.getElementById('totalGrossIncome').value = totalGross.toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('totalDeductions').value = totalDeductions.toLocaleString('en-US', {minimumFractionDigits: 2});
+            
+            const netIncome = totalGross - totalDeductions;
+            document.getElementById('modalNetIncome').value = netIncome.toLocaleString('en-US', {minimumFractionDigits: 2});
+        }
+
+        function applyModalIncome() {
+            const netIncome = parseCurrency(document.getElementById('modalNetIncome').value);
+            const targetInput = currentModalTarget === 'higher' ? 
+                document.getElementById('higherIncome') : 
+                document.getElementById('lowerIncome');
+            
+            targetInput.value = '$' + netIncome.toLocaleString('en-US', {minimumFractionDigits: 2});
+            closeIncomeModal();
+        }
+
+        // Main calculation functions
+        document.getElementById('alimonyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            calculateAlimony();
+        });
+
+        function calculateAlimony() {
+            const higherIncome = parseCurrency(document.getElementById('higherIncome').value);
+            const lowerIncome = parseCurrency(document.getElementById('lowerIncome').value);
+            const marriageDate = new Date(document.getElementById('marriageDate').value);
+            const filingDate = new Date(document.getElementById('filingDate').value);
+            const reasonableNeed = parseCurrency(document.getElementById('reasonableNeed').value);
+
+            if (higherIncome <= lowerIncome) {
+                alert('Higher earner income must be greater than lower earner income.');
+                return;
+            }
+
+            if (filingDate <= marriageDate) {
+                alert('Filing date must be after marriage date.');
+                return;
+            }
+
+            const yearsMarried = (filingDate - marriageDate) / (365.25 * 24 * 60 * 60 * 1000);
+            
+            let marriageType, durationRatio;
+            
+            if (yearsMarried < 3) {
+                marriageType = "No Durational Alimony (Marriage < 3 years)";
+                durationRatio = 0;
+            } else if (yearsMarried < 10) {
+                marriageType = "Short Term Marriage";
+                durationRatio = 0.5;
+            } else if (yearsMarried < 20) {
+                marriageType = "Moderate Term Marriage";
+                durationRatio = 0.6;
+            } else {
+                marriageType = "Long Term Marriage";
+                durationRatio = 0.75;
+            }
+
+            const incomeDifference = higherIncome - lowerIncome;
+            const thirtyFivePercent = incomeDifference * 0.35;
+            const maxAlimonyAmount = Math.min(reasonableNeed, thirtyFivePercent);
+            const maxDurationYears = yearsMarried * durationRatio;
+            const totalPayment = maxAlimonyAmount * 12 * maxDurationYears;
+
+            // Update results
+            document.getElementById('marriageType').textContent = marriageType;
+            document.getElementById('yearsMarried').textContent = yearsMarried.toFixed(2) + ' years';
+            document.getElementById('incomeDifference').textContent = fmtMoney(incomeDifference);
+            document.getElementById('thirtyFivePercent').textContent = fmtMoney(thirtyFivePercent);
+            document.getElementById('maxAlimonyAmount').textContent = fmtMoney(maxAlimonyAmount);
+            document.getElementById('maxDuration').textContent = maxDurationYears.toFixed(2) + ' years';
+            document.getElementById('totalPayment').textContent = fmtMoney(totalPayment);
+
+            // Pre-populate NPV fields
+            document.getElementById('npvAmount').value = fmtMoney(maxAlimonyAmount);
+            document.getElementById('npvYears').value = maxDurationYears.toFixed(2);
+
+            const warningDiv = document.getElementById('warningMessage');
+            if (yearsMarried < 3) {
+                warningDiv.style.display = 'block';
+                warningDiv.innerHTML = '<strong>Important:</strong> Durational alimony may not be awarded for marriages lasting less than 3 years under Florida Statute 61.08. Other types of alimony (bridge-the-gap or rehabilitative) may still be available.';
+            } else {
+                warningDiv.style.display = 'none';
+            }
+
+            document.getElementById('results').classList.add('show');
+            calculateNPV();
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- NPV Calculation (Excel-compatible) ---
+        function calculateNPV() {
+            const monthlyPayment = parseCurrency(document.getElementById('npvAmount').value);
+            const years = parseFloat(document.getElementById('npvYears').value) || 0;
+            const annualRate = parseFloat(document.getElementById('discountRate').value) / 100 || 0.05;
+
+            if (monthlyPayment > 0 && years > 0) {
+                const useEffective = document.getElementById('effectiveMonthly')?.checked;
+                const annuityDue = document.getElementById('annuityDue')?.checked;
+
+                // Monthly rate: effective ((1+annual)^(1/12)-1) or simple (annual/12)
+                const monthlyRate = useEffective ? Math.pow(1 + annualRate, 1/12) - 1 : (annualRate / 12);
+
+                const n = Math.round(years * 12); // total payments
+                let pv = monthlyPayment * (1 - Math.pow(1 + monthlyRate, -n)) / monthlyRate;
+
+                if (annuityDue) {
+                    pv *= (1 + monthlyRate); // shift to beginning of period
+                }
+                document.getElementById('npvResult').textContent = fmtMoney(pv);
+            } else {
+                document.getElementById('npvResult').textContent = '$0.00';
+            }
+        }
+
+        // Save/Load functionality
+        function saveData() {
+            const data = {
+                higherEarnerName: document.getElementById('higherEarnerName').value,
+                higherEarnerGender: document.getElementById('higherEarnerGender').value,
+                higherIncome: document.getElementById('higherIncome').value,
+                lowerEarnerName: document.getElementById('lowerEarnerName').value,
+                lowerEarnerGender: document.getElementById('lowerEarnerGender').value,
+                lowerIncome: document.getElementById('lowerIncome').value,
+                marriageDate: document.getElementById('marriageDate').value,
+                filingDate: document.getElementById('filingDate').value,
+                reasonableNeed: document.getElementById('reasonableNeed').value,
+                npvAmount: document.getElementById('npvAmount').value,
+                npvYears: document.getElementById('npvYears').value,
+                discountRate: document.getElementById('discountRate').value
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'florida_alimony_data.json';
+            link.click();
+        }
+
+        function loadData() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        // Load data into form fields
+                        Object.keys(data).forEach(key => {
+                            const element = document.getElementById(key);
+                            if (element) {
+                                element.value = data[key];
+                            }
+                        });
+                        
+                        // Update lower earner gender
+                        updateLowerEarnerGender();
+                        
+                        alert('Data loaded successfully!');
+                    } catch (error) {
+                        alert('Error loading file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Print to PDF functionality
+        function printToPDF() {
+            window.print();
+        }
+
+        // Initialize default dates and values
+        window.addEventListener('load', function() {
+            const today = new Date();
+            const marriageDate = new Date(today.getFullYear() - 5, today.getMonth(), today.getDate());
+            
+            document.getElementById('filingDate').value = today.toISOString().split('T')[0];
+            document.getElementById('marriageDate').value = marriageDate.toISOString().split('T')[0];
+            document.getElementById('discountRate').value = '5.0';
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('incomeModal');
+            if (event.target === modal) {
+                closeIncomeModal();
+            }
+        }
+    </script>
+</body>
+</html>
