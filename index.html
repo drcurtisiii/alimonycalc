@@ -756,35 +756,39 @@
                 <span class="result-value" id="totalPayment"></span>
             </div>
 
-            <div class="npv-section">
-                <div class="npv-header">Net Present Value (NPV) Calculator</div>
-                <div class="npv-grid">
-                    <div class="form-group">
-                        <label for="npvAmount">Monthly Payment Amount:</label>
-                        <div class="input-group">
-                            <span class="input-prefix">$</span>
-                            <input type="text" id="npvAmount" name="npvAmount" 
-                                   oninput="formatCurrency(this)" onblur="finalizeCurrency(this); calculateNPV()">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="npvYears">Number of Years:</label>
-                        <input type="number" id="npvYears" name="npvYears" step="0.1" 
-                               onchange="calculateNPV()">
-                    </div>
-                    <div class="form-group">
-                        <label for="discountRate">Discount Rate (%):</label>
-                        <input type="number" id="discountRate" name="discountRate" step="0.1" value="5.0" 
-                               onchange="calculateNPV()">
+            <div id="warningMessage" class="warning" style="display: none;"></div>
+        </div>
+
+        <div class="npv-section">
+            <div class="npv-header">Net Present Value (NPV) Calculator</div>
+            <div class="npv-grid">
+                <div class="form-group">
+                    <label for="npvAmount">Monthly Payment Amount:</label>
+                    <div class="input-group">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="npvAmount" name="npvAmount" 
+                               oninput="formatCurrency(this)" onblur="finalizeCurrency(this); calculateNPV()">
                     </div>
                 </div>
-                <div class="result-item">
-                    <span class="result-label">Net Present Value (Lump Sum):</span>
-                    <span class="result-value" id="npvResult">$0.00</span>
+                <div class="form-group">
+                    <label for="npvYears">Number of Years:</label>
+                    <input type="number" id="npvYears" name="npvYears" step="0.1" 
+                           onchange="calculateNPV()">
+                </div>
+                <div class="form-group">
+                    <label for="discountRate">Discount Rate (%):</label>
+                    <input type="number" id="discountRate" name="discountRate" step="0.1" value="5.0" 
+                           onchange="calculateNPV()">
                 </div>
             </div>
-
-            <div id="warningMessage" class="warning" style="display: none;"></div>
+            <div class="result-item">
+                <span class="result-label">Total Paid Over Term:</span>
+                <span class="result-value" id="totalPaidOverTerm">$0.00</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Net Present Value (Lump Sum):</span>
+                <span class="result-value" id="npvResult">$0.00</span>
+            </div>
         </div>
 
         <div class="legal-disclaimer">
@@ -1150,13 +1154,18 @@
             const annualRate = parseFloat(document.getElementById('discountRate').value) / 100 || 0.05;
 
             if (monthlyPayment > 0 && years > 0) {
+                // Calculate total payments over term
+                const n = Math.round(years * 12); // total payments
+                const totalPaid = monthlyPayment * n;
+                document.getElementById('totalPaidOverTerm').textContent = fmtMoney(totalPaid);
+                
                 // Always use Excel's effective monthly rate and annuity-due
                 const monthlyRate = Math.pow(1 + annualRate, 1/12) - 1;
-                const n = Math.round(years * 12); // total payments
                 let pv = monthlyPayment * (1 - Math.pow(1 + monthlyRate, -n)) / monthlyRate;
                 pv *= (1 + monthlyRate); // annuity-due adjustment
                 document.getElementById('npvResult').textContent = fmtMoney(pv);
             } else {
+                document.getElementById('totalPaidOverTerm').textContent = '$0.00';
                 document.getElementById('npvResult').textContent = '$0.00';
             }
         }
