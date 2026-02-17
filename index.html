@@ -218,24 +218,43 @@
             box-shadow: 0 8px 16px rgba(45, 125, 255, 0.25);
         }
 
-        .calculate-btn {
-            background: linear-gradient(120deg, var(--gradient-start), var(--gradient-end));
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 14px;
-            font-size: 1.1em;
-            font-weight: 600;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .requirements-bar {
             width: 100%;
             margin-bottom: 30px;
+            border: 1px solid #f2cf7a;
+            border-left: 6px solid #d99b13;
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 0.96em;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            background: #fff6de;
+            color: #775200;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
 
-        .calculate-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 26px rgba(45, 125, 255, 0.25);
+        .requirements-bar:hover {
+            border-color: #d99b13;
+            box-shadow: 0 8px 20px rgba(195, 139, 28, 0.2);
+        }
+
+        .requirements-bar.ready {
+            border-color: #93ddb5;
+            border-left-color: #1f9d57;
+            background: #ecfbf3;
+            color: #17653d;
+        }
+
+        .requirements-list {
+            margin: 8px 0 0 18px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .requirements-summary {
+            color: var(--text-secondary);
         }
 
         .results {
@@ -854,7 +873,7 @@
 
         <div class="action-buttons">
             <button class="action-btn" onclick="saveData()">Save ZIP</button>
-            <button class="action-btn" onclick="loadData()">Load ZIP/JSON</button>
+            <button class="action-btn" onclick="loadData()">Load ZIP</button>
             <button class="action-btn" onclick="printToPDF()">🖨️ Print to PDF</button>
         </div>
 
@@ -966,7 +985,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="calculate-btn">Calculate Maximum Alimony</button>
+            <button type="button" id="requirementsBar" class="requirements-bar" onclick="handleRequirementsBarClick()">Additional terms required</button>
         </form>
 
         <div id="results" class="results">
@@ -1005,7 +1024,7 @@
             <div id="warningMessage" class="warning" style="display: none;"></div>
         </div>
 
-        <div class="npv-section">
+        <div id="npvSection" class="npv-section hidden">
             <div class="npv-header">Net Present Value (NPV) Calculator</div>
             <div class="npv-grid">
                 <div class="form-group">
@@ -1209,6 +1228,22 @@
         </div>
     </div>
 
+    <div id="requirementsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Additional Terms Required</h2>
+                <span class="close" onclick="closeRequirementsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="requirementsSummary" class="requirements-summary"></p>
+                <ul id="requirementsList" class="requirements-list"></ul>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" type="button" onclick="closeRequirementsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Hidden file input for loading data -->
     <input type="file" id="fileInput" accept=".json,.zip" style="display: none;" onchange="handleFileLoad(event)">
 
@@ -1225,6 +1260,14 @@
             higher: [],
             lower: []
         };
+        const REQUIRED_FIELDS = [
+            { id: 'higherIncome', label: 'Higher Earner Net Monthly Income' },
+            { id: 'lowerIncome', label: 'Lower Earner Net Monthly Income' },
+            { id: 'marriageDate', label: 'Date of Marriage' },
+            { id: 'filingDate', label: 'Date of Filing/Petition' },
+            { id: 'reasonableNeed', label: 'Reasonable Monthly Need of Receiving Spouse' }
+        ];
+        const requiredFieldTouched = {};
 
         // Currency formatting functions
         function sanitizeCurrencyInput(rawValue) {
@@ -1932,47 +1975,195 @@
                 document.getElementById('lowerIncome');
             
             targetInput.value = fmtInputMoney(netIncome);
+            requiredFieldTouched[targetInput.id] = true;
             closeIncomeModal();
+            refreshCalculationAvailability();
+        }
+
+        function isFieldFilled(fieldId) {
+            const fieldEl = document.getElementById(fieldId);
+            if (!fieldEl) {
+                return false;
+            }
+            return String(fieldEl.value || '').trim() !== '';
+        }
+
+        function markAllRequiredFieldsTouched() {
+            REQUIRED_FIELDS.forEach((field) => {
+                requiredFieldTouched[field.id] = true;
+            });
+        }
+
+        function getRequirementsState() {
+            const issues = [];
+
+            REQUIRED_FIELDS.forEach((field) => {
+                if (!isFieldFilled(field.id)) {
+                    issues.push(`${field.label} is required.`);
+                    return;
+                }
+
+                if (!requiredFieldTouched[field.id]) {
+                    issues.push(`${field.label} must be tabbed through.`);
+                }
+            });
+
+            if (!issues.length) {
+                const higherIncome = parseCurrency(document.getElementById('higherIncome').value);
+                const lowerIncome = parseCurrency(document.getElementById('lowerIncome').value);
+                const marriageDate = new Date(document.getElementById('marriageDate').value);
+                const filingDate = new Date(document.getElementById('filingDate').value);
+
+                if (higherIncome <= lowerIncome) {
+                    issues.push('Higher earner income must be greater than lower earner income.');
+                }
+
+                if (filingDate <= marriageDate) {
+                    issues.push('Date of Filing/Petition must be after Date of Marriage.');
+                }
+            }
+
+            return {
+                ready: issues.length === 0,
+                issues: issues
+            };
+        }
+
+        function updateRequirementsBar(state) {
+            const bar = document.getElementById('requirementsBar');
+            if (!bar) {
+                return;
+            }
+
+            if (state.ready) {
+                bar.textContent = 'All required terms complete';
+                bar.classList.add('ready');
+            } else {
+                bar.textContent = 'Additional terms required';
+                bar.classList.remove('ready');
+            }
+        }
+
+        function showCalculatedSections(show) {
+            const resultsEl = document.getElementById('results');
+            const npvEl = document.getElementById('npvSection');
+
+            if (show) {
+                resultsEl.classList.add('show');
+                npvEl.classList.remove('hidden');
+            } else {
+                resultsEl.classList.remove('show');
+                npvEl.classList.add('hidden');
+            }
+        }
+
+        function openRequirementsModalForState(state) {
+            const summary = document.getElementById('requirementsSummary');
+            const list = document.getElementById('requirementsList');
+            list.innerHTML = '';
+
+            if (state.ready) {
+                summary.textContent = 'All required inputs are complete.';
+            } else {
+                summary.textContent = 'Complete the following items before results can be shown:';
+                state.issues.forEach((issue) => {
+                    const li = document.createElement('li');
+                    li.textContent = issue;
+                    list.appendChild(li);
+                });
+            }
+
+            document.getElementById('requirementsModal').style.display = 'block';
+        }
+
+        function closeRequirementsModal() {
+            document.getElementById('requirementsModal').style.display = 'none';
+        }
+
+        function handleRequirementsBarClick() {
+            const state = getRequirementsState();
+            if (!state.ready) {
+                openRequirementsModalForState(state);
+            }
+        }
+
+        function refreshCalculationAvailability(options) {
+            const opts = options || {};
+            const state = getRequirementsState();
+            updateRequirementsBar(state);
+
+            if (!state.ready) {
+                showCalculatedSections(false);
+                return false;
+            }
+
+            const didCalculate = calculateAlimony({ scrollIntoView: Boolean(opts.scrollIntoView) });
+            showCalculatedSections(Boolean(didCalculate));
+            return didCalculate;
+        }
+
+        function initializeRequiredFieldTracking() {
+            REQUIRED_FIELDS.forEach((field) => {
+                requiredFieldTouched[field.id] = false;
+                const element = document.getElementById(field.id);
+                if (!element) {
+                    return;
+                }
+
+                element.addEventListener('input', function() {
+                    refreshCalculationAvailability();
+                });
+                element.addEventListener('change', function() {
+                    refreshCalculationAvailability();
+                });
+                element.addEventListener('blur', function() {
+                    requiredFieldTouched[field.id] = true;
+                    refreshCalculationAvailability();
+                });
+            });
         }
 
         // Main calculation functions
         document.getElementById('alimonyForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            calculateAlimony();
+            const didCalculate = refreshCalculationAvailability({ scrollIntoView: true });
+            if (!didCalculate) {
+                openRequirementsModalForState(getRequirementsState());
+            }
         });
 
-        function calculateAlimony() {
+        function calculateAlimony(options) {
+            const opts = options || {};
             const higherIncome = parseCurrency(document.getElementById('higherIncome').value);
             const lowerIncome = parseCurrency(document.getElementById('lowerIncome').value);
             const marriageDate = new Date(document.getElementById('marriageDate').value);
             const filingDate = new Date(document.getElementById('filingDate').value);
             const reasonableNeed = parseCurrency(document.getElementById('reasonableNeed').value);
 
-            if (higherIncome <= lowerIncome) {
-                alert('Higher earner income must be greater than lower earner income.');
-                return;
+            if (!Number.isFinite(higherIncome) || !Number.isFinite(lowerIncome) || !Number.isFinite(reasonableNeed)) {
+                return false;
             }
 
-            if (filingDate <= marriageDate) {
-                alert('Filing date must be after marriage date.');
-                return;
+            if (higherIncome <= lowerIncome || filingDate <= marriageDate) {
+                return false;
             }
 
             const yearsMarried = (filingDate - marriageDate) / (365.25 * 24 * 60 * 60 * 1000);
-            
-            let marriageType, durationRatio;
-            
+
+            let marriageType;
+            let durationRatio;
+
             if (yearsMarried < 3) {
-                marriageType = "No Durational Alimony (Marriage < 3 years)";
+                marriageType = 'No Durational Alimony (Marriage < 3 years)';
                 durationRatio = 0;
             } else if (yearsMarried < 10) {
-                marriageType = "Short Term Marriage";
+                marriageType = 'Short Term Marriage';
                 durationRatio = 0.5;
             } else if (yearsMarried < 20) {
-                marriageType = "Moderate Term Marriage";
+                marriageType = 'Moderate Term Marriage';
                 durationRatio = 0.6;
             } else {
-                marriageType = "Long Term Marriage";
+                marriageType = 'Long Term Marriage';
                 durationRatio = 0.75;
             }
 
@@ -2003,9 +2194,13 @@
                 warningDiv.style.display = 'none';
             }
 
-            document.getElementById('results').classList.add('show');
             calculateNPV();
-            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+            if (opts.scrollIntoView) {
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            return true;
         }
 
         // --- NPV Calculation (Excel-compatible, always effective monthly + annuity-due) ---
@@ -2048,10 +2243,20 @@
                 });
 
                 const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const now = new Date();
+                const pad2 = (value) => String(value).padStart(2, '0');
+                const datePart = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+                const timePart = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+                const higherEarnerNameRaw = document.getElementById('higherEarnerName').value.trim();
+                const higherEarnerName = (higherEarnerNameRaw || 'UNNAMED')
+                    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim() || 'UNNAMED';
+                const zipFileName = `${datePart}_${timePart}_${higherEarnerName}_ALIMONY CALC.zip`;
                 const objectUrl = URL.createObjectURL(zipBlob);
                 const link = document.createElement('a');
                 link.href = objectUrl;
-                link.download = 'florida_alimony_data.zip';
+                link.download = zipFileName;
                 link.click();
                 setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
             } catch (error) {
@@ -2073,6 +2278,9 @@
             } else {
                 clearAllAttachments();
             }
+
+            markAllRequiredFieldsTouched();
+            refreshCalculationAvailability();
         }
 
         async function loadZipFile(file) {
@@ -2105,6 +2313,8 @@
             }));
 
             importStateWithAttachments(state, attachmentLookup);
+            markAllRequiredFieldsTouched();
+            refreshCalculationAvailability();
         }
 
         async function handleFileLoad(event) {
@@ -2142,20 +2352,26 @@
             document.getElementById('marriageDate').value = marriageDate.toISOString().split('T')[0];
             document.getElementById('discountRate').value = '5.0';
             initializeMainCurrencyInputs();
+            initializeRequiredFieldTracking();
             normalizeMainCurrencyInputValues();
             setupAttachmentDropZones();
             renderAllAttachmentLists();
+            refreshCalculationAvailability();
         });
 
         // Close modal when clicking outside
         window.onclick = function(event) {
             const incomeModal = document.getElementById('incomeModal');
             const attachmentModal = document.getElementById('attachmentModal');
+            const requirementsModal = document.getElementById('requirementsModal');
             if (event.target === incomeModal) {
                 closeIncomeModal();
             }
             if (event.target === attachmentModal) {
                 closeAttachmentModal();
+            }
+            if (event.target === requirementsModal) {
+                closeRequirementsModal();
             }
         }
     </script>
