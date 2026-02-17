@@ -470,6 +470,103 @@
             font-family: 'JetBrains Mono', 'Consolas', monospace;
         }
 
+        .attachment-section {
+            margin-top: 16px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+        }
+
+        .attachment-section-title {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .attachment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .attachment-empty {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            border: 1px dashed var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            background: #fbfcff;
+        }
+
+        .attachment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 8px 10px;
+            background: #ffffff;
+        }
+
+        .attachment-name {
+            font-size: 0.85em;
+            color: var(--text-primary);
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .attachment-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .attachment-btn {
+            border: 1px solid var(--border-color);
+            background: #f4f7ff;
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 9px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .attachment-btn:hover {
+            border-color: var(--accent-blue);
+            background: #e9f1ff;
+        }
+
+        .attachment-modal-content {
+            max-width: 980px;
+        }
+
+        .attachment-viewer-content {
+            min-height: 58vh;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: #f6f8fd;
+            padding: 12px;
+            overflow: auto;
+        }
+
+        .attachment-viewer-content img,
+        .attachment-viewer-content embed,
+        .attachment-viewer-content iframe {
+            max-width: 100%;
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .attachment-viewer-content iframe,
+        .attachment-viewer-content embed {
+            min-height: 70vh;
+            background: #ffffff;
+        }
+
         /* Print Styles - Single Sheet Court Exhibit */
         @media print {
             body {
@@ -680,6 +777,11 @@
             .income-input-row {
                 grid-template-columns: 1fr;
             }
+
+            .attachment-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
 
         .hidden {
@@ -695,8 +797,8 @@
         </div>
 
         <div class="action-buttons">
-            <button class="action-btn" onclick="saveData()">💾 Save Data</button>
-            <button class="action-btn" onclick="loadData()">📁 Load Data</button>
+            <button class="action-btn" onclick="saveData()">Save ZIP</button>
+            <button class="action-btn" onclick="loadData()">Load ZIP/JSON</button>
             <button class="action-btn" onclick="printToPDF()">🖨️ Print to PDF</button>
         </div>
 
@@ -729,6 +831,14 @@
                             <button type="button" class="calculator-icon" onclick="openIncomeModal('higher')" title="Calculate Net Income">🧮</button>
                         </div>
                     </div>
+                    <div class="attachment-section">
+                        <div class="attachment-section-title">Supporting Documents</div>
+                        <button type="button" class="attachment-btn" onclick="triggerAttachmentUpload('higher')">Add Attachment</button>
+                        <input type="file" id="higherAttachmentInput" multiple style="display: none;" onchange="handleAttachmentSelection(event, 'higher')">
+                        <div id="higherAttachmentsList" class="attachment-list">
+                            <div class="attachment-empty">No attachments yet.</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="income-section">
@@ -756,6 +866,14 @@
                                        oninput="formatCurrency(this)" onblur="finalizeCurrency(this)">
                             </div>
                             <button type="button" class="calculator-icon" onclick="openIncomeModal('lower')" title="Calculate Net Income">🧮</button>
+                        </div>
+                    </div>
+                    <div class="attachment-section">
+                        <div class="attachment-section-title">Supporting Documents</div>
+                        <button type="button" class="attachment-btn" onclick="triggerAttachmentUpload('lower')">Add Attachment</button>
+                        <input type="file" id="lowerAttachmentInput" multiple style="display: none;" onchange="handleAttachmentSelection(event, 'lower')">
+                        <div id="lowerAttachmentsList" class="attachment-list">
+                            <div class="attachment-empty">No attachments yet.</div>
                         </div>
                     </div>
                 </div>
@@ -1011,12 +1129,33 @@
         </div>
     </div>
 
+    <div id="attachmentModal" class="modal">
+        <div class="modal-content attachment-modal-content">
+            <div class="modal-header">
+                <h2 id="attachmentModalTitle">Attachment Viewer</h2>
+                <span class="close" onclick="closeAttachmentModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="attachmentViewerContent" class="attachment-viewer-content"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Hidden file input for loading data -->
-    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileLoad(event)">
+    <input type="file" id="fileInput" accept=".json,.zip" style="display: none;" onchange="handleFileLoad(event)">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
         let currentModalTarget = '';
         const MAIN_CURRENCY_INPUT_IDS = ['higherIncome', 'lowerIncome', 'reasonableNeed', 'npvAmount'];
+        const PERSON_KEYS = ['higher', 'lower'];
+        const ZIP_DATA_FILENAME = 'mediation_data.json';
+        const ATTACHMENTS_FOLDER = 'attachments/';
+        const personAttachments = {
+            higher: [],
+            lower: []
+        };
 
         // Currency formatting functions
         function sanitizeCurrencyInput(rawValue) {
@@ -1161,6 +1300,362 @@
             } else {
                 lowerGenderSelect.value = '';
             }
+        }
+
+        function createAttachmentId() {
+            return 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        }
+
+        function sanitizeFileKeyPart(value) {
+            return String(value || 'file')
+                .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+                .replace(/\s+/g, '_')
+                .replace(/_+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .slice(0, 80);
+        }
+
+        function getFileExtension(fileName) {
+            const parts = String(fileName || '').split('.');
+            if (parts.length < 2) {
+                return '';
+            }
+            return parts.pop().toLowerCase();
+        }
+
+        function getExtensionForAttachment(attachment) {
+            const fromName = getFileExtension(attachment.name);
+            if (fromName) {
+                return fromName;
+            }
+
+            const mimeMap = {
+                'application/pdf': 'pdf',
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/webp': 'webp',
+                'image/gif': 'gif'
+            };
+
+            return mimeMap[attachment.type] || 'bin';
+        }
+
+        function guessMimeTypeFromName(fileName) {
+            const extension = getFileExtension(fileName);
+            const extensionMap = {
+                pdf: 'application/pdf',
+                jpg: 'image/jpeg',
+                jpeg: 'image/jpeg',
+                png: 'image/png',
+                webp: 'image/webp',
+                gif: 'image/gif'
+            };
+
+            return extensionMap[extension] || 'application/octet-stream';
+        }
+
+        function splitDataUrl(dataUrl) {
+            const marker = ';base64,';
+            const markerIndex = String(dataUrl || '').indexOf(marker);
+            if (markerIndex === -1) {
+                return null;
+            }
+
+            const mimeType = dataUrl.slice(5, markerIndex) || 'application/octet-stream';
+            const base64 = dataUrl.slice(markerIndex + marker.length);
+            if (!base64) {
+                return null;
+            }
+
+            return { mimeType, base64 };
+        }
+
+        function buildDataUrl(mimeType, base64Data) {
+            return `data:${mimeType || 'application/octet-stream'};base64,${base64Data}`;
+        }
+
+        function triggerAttachmentUpload(personKey) {
+            const fileInput = document.getElementById(`${personKey}AttachmentInput`);
+            if (fileInput) {
+                fileInput.click();
+            }
+        }
+
+        function readFileAsDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    resolve(e.target.result);
+                };
+                reader.onerror = function() {
+                    reject(new Error(`Unable to read file: ${file.name}`));
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleAttachmentSelection(event, personKey) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) {
+                return;
+            }
+
+            try {
+                const dataUrls = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
+                dataUrls.forEach((dataUrl, index) => {
+                    const file = files[index];
+                    personAttachments[personKey].push({
+                        id: createAttachmentId(),
+                        name: file.name,
+                        type: file.type || guessMimeTypeFromName(file.name),
+                        data: dataUrl
+                    });
+                });
+                renderAttachmentList(personKey);
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                event.target.value = '';
+            }
+        }
+
+        function removeAttachment(personKey, attachmentId) {
+            personAttachments[personKey] = personAttachments[personKey].filter((attachment) => attachment.id !== attachmentId);
+            renderAttachmentList(personKey);
+        }
+
+        function viewAttachment(personKey, attachmentId) {
+            const attachment = personAttachments[personKey].find((item) => item.id === attachmentId);
+            if (!attachment) {
+                return;
+            }
+
+            const modal = document.getElementById('attachmentModal');
+            const modalTitle = document.getElementById('attachmentModalTitle');
+            const viewer = document.getElementById('attachmentViewerContent');
+
+            modalTitle.textContent = attachment.name || 'Attachment Viewer';
+            viewer.innerHTML = '';
+
+            if (String(attachment.type).startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = attachment.data;
+                img.alt = attachment.name || 'Attachment image';
+                viewer.appendChild(img);
+            } else if (attachment.type === 'application/pdf') {
+                const iframe = document.createElement('iframe');
+                iframe.src = attachment.data;
+                iframe.title = attachment.name || 'Attachment PDF';
+                viewer.appendChild(iframe);
+            } else {
+                const info = document.createElement('p');
+                info.textContent = 'Preview is not available for this file type. Use Open/Download.';
+                info.style.marginBottom = '10px';
+
+                const link = document.createElement('a');
+                link.href = attachment.data;
+                link.download = attachment.name || 'attachment';
+                link.textContent = 'Open/Download Attachment';
+                link.className = 'attachment-btn';
+
+                viewer.appendChild(info);
+                viewer.appendChild(link);
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function closeAttachmentModal() {
+            document.getElementById('attachmentModal').style.display = 'none';
+            document.getElementById('attachmentViewerContent').innerHTML = '';
+        }
+
+        function renderAttachmentList(personKey) {
+            const listEl = document.getElementById(`${personKey}AttachmentsList`);
+            if (!listEl) {
+                return;
+            }
+
+            listEl.innerHTML = '';
+            const attachments = personAttachments[personKey] || [];
+
+            if (!attachments.length) {
+                const emptyEl = document.createElement('div');
+                emptyEl.className = 'attachment-empty';
+                emptyEl.textContent = 'No attachments yet.';
+                listEl.appendChild(emptyEl);
+                return;
+            }
+
+            attachments.forEach((attachment) => {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'attachment-item';
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'attachment-name';
+                nameEl.textContent = attachment.name || 'Untitled attachment';
+
+                const actionsEl = document.createElement('div');
+                actionsEl.className = 'attachment-actions';
+
+                const viewBtn = document.createElement('button');
+                viewBtn.type = 'button';
+                viewBtn.className = 'attachment-btn';
+                viewBtn.textContent = 'View';
+                viewBtn.addEventListener('click', function() {
+                    viewAttachment(personKey, attachment.id);
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'attachment-btn';
+                removeBtn.textContent = 'Remove';
+                removeBtn.addEventListener('click', function() {
+                    removeAttachment(personKey, attachment.id);
+                });
+
+                actionsEl.appendChild(viewBtn);
+                actionsEl.appendChild(removeBtn);
+                rowEl.appendChild(nameEl);
+                rowEl.appendChild(actionsEl);
+                listEl.appendChild(rowEl);
+            });
+        }
+
+        function renderAllAttachmentLists() {
+            PERSON_KEYS.forEach((personKey) => renderAttachmentList(personKey));
+        }
+
+        function clearAllAttachments() {
+            PERSON_KEYS.forEach((personKey) => {
+                personAttachments[personKey] = [];
+            });
+            renderAllAttachmentLists();
+        }
+
+        function getFormState() {
+            return {
+                higherEarnerName: document.getElementById('higherEarnerName').value,
+                higherEarnerGender: document.getElementById('higherEarnerGender').value,
+                higherIncome: document.getElementById('higherIncome').value,
+                lowerEarnerName: document.getElementById('lowerEarnerName').value,
+                lowerEarnerGender: document.getElementById('lowerEarnerGender').value,
+                lowerIncome: document.getElementById('lowerIncome').value,
+                marriageDate: document.getElementById('marriageDate').value,
+                filingDate: document.getElementById('filingDate').value,
+                reasonableNeed: document.getElementById('reasonableNeed').value,
+                npvAmount: document.getElementById('npvAmount').value,
+                npvYears: document.getElementById('npvYears').value,
+                discountRate: document.getElementById('discountRate').value
+            };
+        }
+
+        function applyFormState(data) {
+            Object.keys(data || {}).forEach((key) => {
+                if (key === 'attachments') {
+                    return;
+                }
+
+                const element = document.getElementById(key);
+                if (element) {
+                    element.value = data[key] || '';
+                }
+            });
+
+            normalizeMainCurrencyInputValues();
+            updateLowerEarnerGender();
+        }
+
+        function exportStateWithAttachments() {
+            const state = getFormState();
+            const exportState = JSON.parse(JSON.stringify(state));
+            exportState.attachments = { higher: [], lower: [] };
+
+            const exportedAttachments = [];
+            const usedFileKeys = new Set();
+
+            PERSON_KEYS.forEach((personKey) => {
+                const sourceAttachments = personAttachments[personKey] || [];
+                sourceAttachments.forEach((attachment, index) => {
+                    const split = splitDataUrl(attachment.data);
+                    if (!split) {
+                        return;
+                    }
+
+                    const baseName = sanitizeFileKeyPart((attachment.name || `${personKey}_attachment_${index + 1}`).replace(/\.[^/.]+$/, '')) || `${personKey}_attachment_${index + 1}`;
+                    const extension = getExtensionForAttachment(attachment);
+                    let fileKey = `${personKey}_${baseName}.${extension}`;
+                    let counter = 1;
+
+                    while (usedFileKeys.has(fileKey)) {
+                        counter += 1;
+                        fileKey = `${personKey}_${baseName}_${counter}.${extension}`;
+                    }
+
+                    usedFileKeys.add(fileKey);
+                    exportState.attachments[personKey].push({
+                        name: attachment.name,
+                        type: attachment.type || split.mimeType,
+                        fileKey: fileKey
+                    });
+
+                    exportedAttachments.push({
+                        fileKey: fileKey,
+                        base64: split.base64
+                    });
+                });
+            });
+
+            return {
+                state: exportState,
+                attachments: exportedAttachments
+            };
+        }
+
+        function importStateWithAttachments(state, attachmentLookup) {
+            applyFormState(state || {});
+
+            PERSON_KEYS.forEach((personKey) => {
+                const loaded = [];
+                const metadataList = state && state.attachments && Array.isArray(state.attachments[personKey])
+                    ? state.attachments[personKey]
+                    : [];
+
+                metadataList.forEach((metadata) => {
+                    const base64 = attachmentLookup[metadata.fileKey];
+                    if (!base64) {
+                        return;
+                    }
+
+                    const mimeType = metadata.type || guessMimeTypeFromName(metadata.name || metadata.fileKey);
+                    loaded.push({
+                        id: createAttachmentId(),
+                        name: metadata.name || metadata.fileKey,
+                        type: mimeType,
+                        data: buildDataUrl(mimeType, base64)
+                    });
+                });
+
+                personAttachments[personKey] = loaded;
+            });
+
+            renderAllAttachmentLists();
+        }
+
+        function importInlineAttachments(attachmentsData) {
+            PERSON_KEYS.forEach((personKey) => {
+                const sourceList = attachmentsData && Array.isArray(attachmentsData[personKey]) ? attachmentsData[personKey] : [];
+                personAttachments[personKey] = sourceList
+                    .filter((entry) => entry && entry.data)
+                    .map((entry) => ({
+                        id: createAttachmentId(),
+                        name: entry.name || 'Attachment',
+                        type: entry.type || guessMimeTypeFromName(entry.name),
+                        data: entry.data
+                    }));
+            });
+
+            renderAllAttachmentLists();
         }
 
         // Income modal functions
@@ -1321,62 +1816,99 @@
         }
 
         // Save/Load functionality
-        function saveData() {
-            const data = {
-                higherEarnerName: document.getElementById('higherEarnerName').value,
-                higherEarnerGender: document.getElementById('higherEarnerGender').value,
-                higherIncome: document.getElementById('higherIncome').value,
-                lowerEarnerName: document.getElementById('lowerEarnerName').value,
-                lowerEarnerGender: document.getElementById('lowerEarnerGender').value,
-                lowerIncome: document.getElementById('lowerIncome').value,
-                marriageDate: document.getElementById('marriageDate').value,
-                filingDate: document.getElementById('filingDate').value,
-                reasonableNeed: document.getElementById('reasonableNeed').value,
-                npvAmount: document.getElementById('npvAmount').value,
-                npvYears: document.getElementById('npvYears').value,
-                discountRate: document.getElementById('discountRate').value
-            };
+        async function saveData() {
+            if (typeof JSZip === 'undefined') {
+                alert('ZIP library is unavailable. Please refresh and try again.');
+                return;
+            }
 
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = 'florida_alimony_data.json';
-            link.click();
+            try {
+                const exportData = exportStateWithAttachments();
+                const zip = new JSZip();
+                zip.file(ZIP_DATA_FILENAME, JSON.stringify(exportData.state, null, 2));
+
+                exportData.attachments.forEach((attachment) => {
+                    zip.file(`${ATTACHMENTS_FOLDER}${attachment.fileKey}`, attachment.base64, { base64: true });
+                });
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const objectUrl = URL.createObjectURL(zipBlob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = 'florida_alimony_data.zip';
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+            } catch (error) {
+                alert('Error saving ZIP file: ' + error.message);
+            }
         }
 
         function loadData() {
             document.getElementById('fileInput').click();
         }
 
-        function handleFileLoad(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        
-                        // Load data into form fields
-                        Object.keys(data).forEach(key => {
-                            const element = document.getElementById(key);
-                            if (element) {
-                                element.value = data[key];
-                            }
-                        });
+        async function loadLegacyJsonFile(file) {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            applyFormState(data || {});
 
-                        normalizeMainCurrencyInputValues();
-                        
-                        // Update lower earner gender
-                        updateLowerEarnerGender();
-                        
-                        alert('Data loaded successfully!');
-                    } catch (error) {
-                        alert('Error loading file: ' + error.message);
-                    }
-                };
-                reader.readAsText(file);
+            if (data && data.attachments) {
+                importInlineAttachments(data.attachments);
+            } else {
+                clearAllAttachments();
+            }
+        }
+
+        async function loadZipFile(file) {
+            if (typeof JSZip === 'undefined') {
+                throw new Error('ZIP library is unavailable.');
+            }
+
+            const zip = await JSZip.loadAsync(file);
+            const zipFiles = Object.keys(zip.files);
+            const stateFileName = zip.file(ZIP_DATA_FILENAME)
+                ? ZIP_DATA_FILENAME
+                : zipFiles.find((name) => name.toLowerCase().endsWith('.json'));
+
+            if (!stateFileName) {
+                throw new Error('No JSON data file found in ZIP.');
+            }
+
+            const stateJson = await zip.file(stateFileName).async('string');
+            const state = JSON.parse(stateJson);
+            const attachmentLookup = {};
+
+            const attachmentEntries = zipFiles.filter((name) => {
+                const fileEntry = zip.files[name];
+                return !fileEntry.dir && name.startsWith(ATTACHMENTS_FOLDER);
+            });
+
+            await Promise.all(attachmentEntries.map(async (name) => {
+                const fileKey = name.slice(ATTACHMENTS_FOLDER.length);
+                attachmentLookup[fileKey] = await zip.file(name).async('base64');
+            }));
+
+            importStateWithAttachments(state, attachmentLookup);
+        }
+
+        async function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            try {
+                if (file.name.toLowerCase().endsWith('.zip')) {
+                    await loadZipFile(file);
+                } else {
+                    await loadLegacyJsonFile(file);
+                }
+
+                alert('Data loaded successfully!');
+            } catch (error) {
+                alert('Error loading file: ' + error.message);
+            } finally {
+                event.target.value = '';
             }
         }
 
@@ -1395,13 +1927,18 @@
             document.getElementById('discountRate').value = '5.0';
             initializeMainCurrencyInputs();
             normalizeMainCurrencyInputValues();
+            renderAllAttachmentLists();
         });
 
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('incomeModal');
-            if (event.target === modal) {
+            const incomeModal = document.getElementById('incomeModal');
+            const attachmentModal = document.getElementById('attachmentModal');
+            if (event.target === incomeModal) {
                 closeIncomeModal();
+            }
+            if (event.target === attachmentModal) {
+                closeAttachmentModal();
             }
         }
     </script>
