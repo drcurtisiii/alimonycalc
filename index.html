@@ -642,6 +642,40 @@
             background: #ffffff;
         }
 
+        .pdf-pages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .pdf-page-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #ffffff;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        .pdf-page-label {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .pdf-page-card canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+
+        .pdf-loading {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            padding: 12px;
+        }
+
         /* Print Styles - Single Sheet Court Exhibit */
         @media print {
             body {
@@ -1248,6 +1282,7 @@
     <input type="file" id="fileInput" accept=".json,.zip" style="display: none;" onchange="handleFileLoad(event)">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
     <script>
         let currentModalTarget = '';
@@ -1260,6 +1295,7 @@
             higher: [],
             lower: []
         };
+        const PDFJS_WORKER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         const REQUIRED_FIELDS = [
             { id: 'higherIncome', label: 'Higher Earner Net Monthly Income' },
             { id: 'lowerIncome', label: 'Lower Earner Net Monthly Income' },
@@ -1268,6 +1304,10 @@
             { id: 'reasonableNeed', label: 'Reasonable Monthly Need of Receiving Spouse' }
         ];
         const requiredFieldTouched = {};
+
+        if (typeof pdfjsLib !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_SRC;
+        }
 
         // Currency formatting functions
         function sanitizeCurrencyInput(rawValue) {
@@ -1486,6 +1526,70 @@
             return `data:${mimeType || 'application/octet-stream'};base64,${base64Data}`;
         }
 
+        function base64ToUint8Array(base64Data) {
+            const binaryString = atob(base64Data);
+            const length = binaryString.length;
+            const bytes = new Uint8Array(length);
+            for (let i = 0; i < length; i += 1) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        async function renderPdfAttachment(attachment, viewer) {
+            if (typeof pdfjsLib === 'undefined') {
+                return false;
+            }
+
+            const split = splitDataUrl(attachment.data);
+            if (!split || !split.base64) {
+                return false;
+            }
+
+            viewer.innerHTML = '<div class="pdf-loading">Loading PDF pages...</div>';
+
+            try {
+                const pdfBytes = base64ToUint8Array(split.base64);
+                const pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+
+                viewer.innerHTML = '';
+                const pagesContainer = document.createElement('div');
+                pagesContainer.className = 'pdf-pages-container';
+
+                for (let pageNumber = 1; pageNumber <= pdfDoc.numPages; pageNumber += 1) {
+                    const page = await pdfDoc.getPage(pageNumber);
+                    const viewport = page.getViewport({ scale: 1.25 });
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    await page.render({
+                        canvasContext: ctx,
+                        viewport: viewport
+                    }).promise;
+
+                    const pageCard = document.createElement('div');
+                    pageCard.className = 'pdf-page-card';
+
+                    const pageLabel = document.createElement('div');
+                    pageLabel.className = 'pdf-page-label';
+                    pageLabel.textContent = `Page ${pageNumber} of ${pdfDoc.numPages}`;
+
+                    pageCard.appendChild(pageLabel);
+                    pageCard.appendChild(canvas);
+                    pagesContainer.appendChild(pageCard);
+                }
+
+                viewer.appendChild(pagesContainer);
+                return true;
+            } catch (error) {
+                viewer.innerHTML = '';
+                return false;
+            }
+        }
+
         function triggerAttachmentUpload(personKey) {
             const fileInput = document.getElementById(`${personKey}AttachmentInput`);
             if (fileInput) {
@@ -1683,7 +1787,7 @@
             renderAttachmentList(personKey);
         }
 
-        function viewAttachment(personKey, attachmentId) {
+        async function viewAttachment(personKey, attachmentId) {
             const attachment = personAttachments[personKey].find((item) => item.id === attachmentId);
             if (!attachment) {
                 return;
@@ -1702,10 +1806,13 @@
                 img.alt = attachment.name || 'Attachment image';
                 viewer.appendChild(img);
             } else if (attachment.type === 'application/pdf') {
-                const iframe = document.createElement('iframe');
-                iframe.src = attachment.data;
-                iframe.title = attachment.name || 'Attachment PDF';
-                viewer.appendChild(iframe);
+                const rendered = await renderPdfAttachment(attachment, viewer);
+                if (!rendered) {
+                    const iframe = document.createElement('iframe');
+                    iframe.src = attachment.data;
+                    iframe.title = attachment.name || 'Attachment PDF';
+                    viewer.appendChild(iframe);
+                }
             } else {
                 const info = document.createElement('p');
                 info.textContent = 'Preview is not available for this file type. Use Open/Download.';
