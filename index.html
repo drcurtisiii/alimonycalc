@@ -257,6 +257,52 @@
             color: var(--text-secondary);
         }
 
+        .print-case-details {
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            background: #ffffff;
+        }
+
+        .print-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 20px;
+            margin-top: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .print-field-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.92em;
+            color: var(--text-secondary);
+        }
+
+        .print-field-label {
+            min-width: 130px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .print-attachment-label {
+            margin-top: 8px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.92em;
+        }
+
+        .print-attachment-list {
+            margin: 6px 0 0 20px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
         .results {
             background: linear-gradient(165deg, var(--bg-card) 0%, #f7fbff 100%);
             border: 1px solid var(--border-color);
@@ -748,6 +794,14 @@
                 background: #f0f0f0;
             }
 
+            .print-case-details {
+                display: block !important;
+                margin: 0 0 15px 0 !important;
+                padding: 10px !important;
+                border: 1px solid black !important;
+                border-radius: 0 !important;
+            }
+
             .print-parties {
                 display: grid !important;
                 grid-template-columns: 1fr 1fr;
@@ -758,13 +812,40 @@
             }
 
             .party-info {
-                text-align: center;
+                text-align: left;
             }
 
             .party-info h3 {
                 font-size: 12px;
                 margin-bottom: 5px;
                 text-decoration: underline;
+            }
+
+            .print-field-row {
+                color: black !important;
+                margin-bottom: 4px !important;
+            }
+
+            .print-field-label {
+                color: black !important;
+                min-width: 120px !important;
+            }
+
+            .print-attachment-label {
+                color: black !important;
+            }
+
+            .print-attachment-list {
+                color: black !important;
+                margin-left: 16px !important;
+            }
+
+            .print-meta-grid {
+                border: 1px solid black !important;
+                border-radius: 0 !important;
+                background: white !important;
+                padding: 8px !important;
+                margin-top: 8px !important;
             }
 
             .marriage-type {
@@ -1021,6 +1102,40 @@
 
             <button type="button" id="requirementsBar" class="requirements-bar" onclick="handleRequirementsBarClick()">Additional terms required</button>
         </form>
+
+        <div id="printCaseDetails" class="print-only print-case-details">
+            <div class="print-header">Case Input Summary</div>
+            <div class="print-parties">
+                <div class="party-info">
+                    <h3>Higher Earner</h3>
+                    <div class="print-field-row"><span class="print-field-label">Name:</span><span id="printHigherName">Not provided</span></div>
+                    <div class="print-field-row"><span class="print-field-label">Gender:</span><span id="printHigherGender">Not provided</span></div>
+                    <div class="print-field-row"><span class="print-field-label">Net Income:</span><span id="printHigherIncome">Not provided</span></div>
+                    <div class="print-attachment-label">Supporting Documents</div>
+                    <ul id="printHigherAttachments" class="print-attachment-list">
+                        <li>None attached.</li>
+                    </ul>
+                </div>
+                <div class="party-info">
+                    <h3>Lower Earner</h3>
+                    <div class="print-field-row"><span class="print-field-label">Name:</span><span id="printLowerName">Not provided</span></div>
+                    <div class="print-field-row"><span class="print-field-label">Gender:</span><span id="printLowerGender">Not provided</span></div>
+                    <div class="print-field-row"><span class="print-field-label">Net Income:</span><span id="printLowerIncome">Not provided</span></div>
+                    <div class="print-attachment-label">Supporting Documents</div>
+                    <ul id="printLowerAttachments" class="print-attachment-list">
+                        <li>None attached.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="print-meta-grid">
+                <div class="print-field-row"><span class="print-field-label">Date of Marriage:</span><span id="printMarriageDate">Not provided</span></div>
+                <div class="print-field-row"><span class="print-field-label">Date of Filing:</span><span id="printFilingDate">Not provided</span></div>
+                <div class="print-field-row"><span class="print-field-label">Reasonable Need:</span><span id="printReasonableNeed">Not provided</span></div>
+                <div class="print-field-row"><span class="print-field-label">NPV Monthly:</span><span id="printNpvAmount">Not provided</span></div>
+                <div class="print-field-row"><span class="print-field-label">NPV Years:</span><span id="printNpvYears">Not provided</span></div>
+                <div class="print-field-row"><span class="print-field-label">Discount Rate:</span><span id="printDiscountRate">Not provided</span></div>
+            </div>
+        </div>
 
         <div id="results" class="results">
             <div id="marriageType" class="marriage-type"></div>
@@ -2333,6 +2448,110 @@
             }
         }
 
+        function sanitizeExportNamePart(value) {
+            return (String(value || '').trim() || 'UNNAMED')
+                .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim() || 'UNNAMED';
+        }
+
+        function buildExportBaseName(now) {
+            const stamp = now instanceof Date ? now : new Date();
+            const pad2 = (value) => String(value).padStart(2, '0');
+            const datePart = `${stamp.getFullYear()}-${pad2(stamp.getMonth() + 1)}-${pad2(stamp.getDate())}`;
+            const timePart = `${pad2(stamp.getHours())}${pad2(stamp.getMinutes())}${pad2(stamp.getSeconds())}`;
+            const higherEarnerName = sanitizeExportNamePart(document.getElementById('higherEarnerName').value);
+            return `${datePart}_${timePart}_${higherEarnerName}_ALIMONY CALC`;
+        }
+
+        function formatDateForPrint(value) {
+            const raw = String(value || '').trim();
+            if (!raw) {
+                return 'Not provided';
+            }
+
+            const parts = raw.split('-');
+            if (parts.length === 3) {
+                return `${parts[1]}/${parts[2]}/${parts[0]}`;
+            }
+
+            const date = new Date(raw);
+            if (!Number.isNaN(date.getTime())) {
+                return date.toLocaleDateString('en-US');
+            }
+
+            return raw;
+        }
+
+        function formatCurrencyForPrint(value) {
+            const raw = String(value || '').trim();
+            if (!raw) {
+                return 'Not provided';
+            }
+
+            const numeric = Number(raw.replace(/[$,\s]/g, ''));
+            if (Number.isFinite(numeric)) {
+                return fmtMoney(numeric);
+            }
+
+            return raw;
+        }
+
+        function formatTextForPrint(value, suffix) {
+            const raw = String(value || '').trim();
+            if (!raw) {
+                return 'Not provided';
+            }
+            return suffix ? `${raw} ${suffix}` : raw;
+        }
+
+        function setPrintText(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        function renderPrintAttachmentList(personKey, elementId) {
+            const listEl = document.getElementById(elementId);
+            if (!listEl) {
+                return;
+            }
+
+            listEl.innerHTML = '';
+            const attachments = personAttachments[personKey] || [];
+            if (!attachments.length) {
+                const li = document.createElement('li');
+                li.textContent = 'None attached.';
+                listEl.appendChild(li);
+                return;
+            }
+
+            attachments.forEach((attachment, index) => {
+                const li = document.createElement('li');
+                li.textContent = attachment.name || `Attachment ${index + 1}`;
+                listEl.appendChild(li);
+            });
+        }
+
+        function populatePrintCaseDetails() {
+            setPrintText('printHigherName', formatTextForPrint(document.getElementById('higherEarnerName').value));
+            setPrintText('printHigherGender', formatTextForPrint(document.getElementById('higherEarnerGender').value));
+            setPrintText('printHigherIncome', formatCurrencyForPrint(document.getElementById('higherIncome').value));
+            setPrintText('printLowerName', formatTextForPrint(document.getElementById('lowerEarnerName').value));
+            setPrintText('printLowerGender', formatTextForPrint(document.getElementById('lowerEarnerGender').value));
+            setPrintText('printLowerIncome', formatCurrencyForPrint(document.getElementById('lowerIncome').value));
+            setPrintText('printMarriageDate', formatDateForPrint(document.getElementById('marriageDate').value));
+            setPrintText('printFilingDate', formatDateForPrint(document.getElementById('filingDate').value));
+            setPrintText('printReasonableNeed', formatCurrencyForPrint(document.getElementById('reasonableNeed').value));
+            setPrintText('printNpvAmount', formatCurrencyForPrint(document.getElementById('npvAmount').value));
+            setPrintText('printNpvYears', formatTextForPrint(document.getElementById('npvYears').value, 'years'));
+            setPrintText('printDiscountRate', formatTextForPrint(document.getElementById('discountRate').value, '%'));
+
+            renderPrintAttachmentList('higher', 'printHigherAttachments');
+            renderPrintAttachmentList('lower', 'printLowerAttachments');
+        }
+
         // Save/Load functionality
         async function saveData() {
             if (typeof JSZip === 'undefined') {
@@ -2350,16 +2569,7 @@
                 });
 
                 const zipBlob = await zip.generateAsync({ type: 'blob' });
-                const now = new Date();
-                const pad2 = (value) => String(value).padStart(2, '0');
-                const datePart = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-                const timePart = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
-                const higherEarnerNameRaw = document.getElementById('higherEarnerName').value.trim();
-                const higherEarnerName = (higherEarnerNameRaw || 'UNNAMED')
-                    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
-                    .replace(/\s+/g, ' ')
-                    .trim() || 'UNNAMED';
-                const zipFileName = `${datePart}_${timePart}_${higherEarnerName}_ALIMONY CALC.zip`;
+                const zipFileName = `${buildExportBaseName(new Date())}.zip`;
                 const objectUrl = URL.createObjectURL(zipBlob);
                 const link = document.createElement('a');
                 link.href = objectUrl;
@@ -2447,8 +2657,26 @@
 
         // Print to PDF functionality
         function printToPDF() {
+            populatePrintCaseDetails();
+
+            const originalTitle = document.title;
+            const pdfFileName = `${buildExportBaseName(new Date())}.pdf`;
+            let titleRestored = false;
+            const restoreTitle = function() {
+                if (titleRestored) {
+                    return;
+                }
+                titleRestored = true;
+                document.title = originalTitle;
+            };
+
+            window.addEventListener('afterprint', restoreTitle, { once: true });
+            document.title = pdfFileName;
             window.print();
+            setTimeout(restoreTitle, 2000);
         }
+
+        window.addEventListener('beforeprint', populatePrintCaseDetails);
 
         // Initialize default dates and values
         window.addEventListener('load', function() {
