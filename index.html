@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Florida Alimony Calculator 2023</title>
+    <title>Florida Alimony Calculator</title>
+    <link rel="icon" type="image/x-icon" href="ALIMONY.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -74,10 +75,21 @@
             color: var(--text-primary);
             font-size: 2.2em;
             margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
             background: linear-gradient(120deg, var(--gradient-start), var(--gradient-end));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: contain;
         }
 
         .header p {
@@ -490,6 +502,50 @@
             margin-top: 10px;
         }
 
+        .attachment-toolbar {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .attachment-dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            background: #f8fbff;
+            padding: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .attachment-dropzone:hover {
+            border-color: var(--accent-blue);
+            background: #eef6ff;
+        }
+
+        .attachment-dropzone:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        .attachment-dropzone.is-dragover {
+            border-color: var(--accent-blue);
+            background: #e7f2ff;
+        }
+
+        .attachment-dropzone-title {
+            font-size: 0.88em;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .attachment-dropzone-subtitle {
+            font-size: 0.82em;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
         .attachment-empty {
             font-size: 0.85em;
             color: var(--text-muted);
@@ -792,7 +848,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Florida Alimony Calculator 2023</h1>
+            <h1><img src="ALIMONY 50x50.png" alt="App Icon" class="header-icon"> Florida Alimony Calculator</h1>
             <p>Calculate maximum alimony under Florida's revised statutes (effective July 1, 2023)</p>
         </div>
 
@@ -833,7 +889,13 @@
                     </div>
                     <div class="attachment-section">
                         <div class="attachment-section-title">Supporting Documents</div>
-                        <button type="button" class="attachment-btn" onclick="triggerAttachmentUpload('higher')">Add Attachment</button>
+                        <div id="higherAttachmentDropzone" class="attachment-dropzone" tabindex="0" role="button" aria-label="Add higher earner attachment" onclick="triggerAttachmentUpload('higher')">
+                            <div class="attachment-dropzone-title">Drag and drop files here</div>
+                            <div class="attachment-dropzone-subtitle">or click to browse</div>
+                        </div>
+                        <div class="attachment-toolbar">
+                            <button type="button" class="attachment-btn" onclick="pasteScreenshot('higher')">Paste Screenshot</button>
+                        </div>
                         <input type="file" id="higherAttachmentInput" multiple style="display: none;" onchange="handleAttachmentSelection(event, 'higher')">
                         <div id="higherAttachmentsList" class="attachment-list">
                             <div class="attachment-empty">No attachments yet.</div>
@@ -870,7 +932,13 @@
                     </div>
                     <div class="attachment-section">
                         <div class="attachment-section-title">Supporting Documents</div>
-                        <button type="button" class="attachment-btn" onclick="triggerAttachmentUpload('lower')">Add Attachment</button>
+                        <div id="lowerAttachmentDropzone" class="attachment-dropzone" tabindex="0" role="button" aria-label="Add lower earner attachment" onclick="triggerAttachmentUpload('lower')">
+                            <div class="attachment-dropzone-title">Drag and drop files here</div>
+                            <div class="attachment-dropzone-subtitle">or click to browse</div>
+                        </div>
+                        <div class="attachment-toolbar">
+                            <button type="button" class="attachment-btn" onclick="pasteScreenshot('lower')">Paste Screenshot</button>
+                        </div>
                         <input type="file" id="lowerAttachmentInput" multiple style="display: none;" onchange="handleAttachmentSelection(event, 'lower')">
                         <div id="lowerAttachmentsList" class="attachment-list">
                             <div class="attachment-empty">No attachments yet.</div>
@@ -1148,6 +1216,7 @@
 
     <script>
         let currentModalTarget = '';
+        let pendingPastePersonKey = null;
         const MAIN_CURRENCY_INPUT_IDS = ['higherIncome', 'lowerIncome', 'reasonableNeed', 'npvAmount'];
         const PERSON_KEYS = ['higher', 'lower'];
         const ZIP_DATA_FILENAME = 'mediation_data.json';
@@ -1381,6 +1450,25 @@
             }
         }
 
+        function getExtensionForMimeType(mimeType) {
+            const mimeMap = {
+                'application/pdf': 'pdf',
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/webp': 'webp',
+                'image/gif': 'gif',
+                'image/bmp': 'bmp'
+            };
+
+            return mimeMap[mimeType] || 'png';
+        }
+
+        function buildScreenshotFileName(mimeType) {
+            const extension = getExtensionForMimeType(mimeType);
+            const stamp = new Date().toISOString().replace('T', '_').replace(/[:.]/g, '-').slice(0, 19);
+            return `Screenshot_${stamp}.${extension}`;
+        }
+
         function readFileAsDataUrl(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1394,6 +1482,30 @@
             });
         }
 
+        async function addAttachmentsFromFiles(personKey, files) {
+            const normalizedFiles = Array.from(files || []).filter(Boolean);
+            if (!normalizedFiles.length) {
+                return;
+            }
+
+            if (!PERSON_KEYS.includes(personKey)) {
+                throw new Error('Invalid attachment target.');
+            }
+
+            const dataUrls = await Promise.all(normalizedFiles.map((file) => readFileAsDataUrl(file)));
+            dataUrls.forEach((dataUrl, index) => {
+                const file = normalizedFiles[index];
+                personAttachments[personKey].push({
+                    id: createAttachmentId(),
+                    name: file.name || `Attachment_${Date.now()}_${index + 1}`,
+                    type: file.type || guessMimeTypeFromName(file.name),
+                    data: dataUrl
+                });
+            });
+
+            renderAttachmentList(personKey);
+        }
+
         async function handleAttachmentSelection(event, personKey) {
             const files = Array.from(event.target.files || []);
             if (!files.length) {
@@ -1401,23 +1513,127 @@
             }
 
             try {
-                const dataUrls = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
-                dataUrls.forEach((dataUrl, index) => {
-                    const file = files[index];
-                    personAttachments[personKey].push({
-                        id: createAttachmentId(),
-                        name: file.name,
-                        type: file.type || guessMimeTypeFromName(file.name),
-                        data: dataUrl
-                    });
-                });
-                renderAttachmentList(personKey);
+                await addAttachmentsFromFiles(personKey, files);
             } catch (error) {
                 alert(error.message);
             } finally {
                 event.target.value = '';
             }
         }
+
+        async function pasteScreenshot(personKey) {
+            if (!PERSON_KEYS.includes(personKey)) {
+                return;
+            }
+
+            if (window.isSecureContext && navigator.clipboard && typeof navigator.clipboard.read === 'function') {
+                try {
+                    const clipboardItems = await navigator.clipboard.read();
+                    for (const item of clipboardItems) {
+                        const imageType = item.types.find((type) => type.startsWith('image/'));
+                        if (!imageType) {
+                            continue;
+                        }
+
+                        const blob = await item.getType(imageType);
+                        const file = new File([blob], buildScreenshotFileName(imageType), { type: imageType });
+                        await addAttachmentsFromFiles(personKey, [file]);
+                        pendingPastePersonKey = null;
+                        return;
+                    }
+
+                    alert('No screenshot image was found on your clipboard.');
+                    return;
+                } catch (error) {
+                    // Fallback to Ctrl+V listener below.
+                }
+            }
+
+            pendingPastePersonKey = personKey;
+            alert('Press Ctrl+V (or Command+V on Mac) now to paste a screenshot.');
+        }
+
+        function setupAttachmentDropZones() {
+            PERSON_KEYS.forEach((personKey) => {
+                const dropzone = document.getElementById(`${personKey}AttachmentDropzone`);
+                if (!dropzone) {
+                    return;
+                }
+
+                const preventDefaults = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                };
+
+                ['dragenter', 'dragover'].forEach((eventName) => {
+                    dropzone.addEventListener(eventName, (event) => {
+                        preventDefaults(event);
+                        dropzone.classList.add('is-dragover');
+                    });
+                });
+
+                ['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+                    dropzone.addEventListener(eventName, (event) => {
+                        preventDefaults(event);
+                        dropzone.classList.remove('is-dragover');
+                    });
+                });
+
+                dropzone.addEventListener('drop', async (event) => {
+                    const files = Array.from((event.dataTransfer && event.dataTransfer.files) || []);
+                    if (!files.length) {
+                        return;
+                    }
+
+                    try {
+                        await addAttachmentsFromFiles(personKey, files);
+                    } catch (error) {
+                        alert(error.message);
+                    }
+                });
+
+                dropzone.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        triggerAttachmentUpload(personKey);
+                    }
+                });
+            });
+        }
+
+        window.addEventListener('paste', async function(event) {
+            if (!pendingPastePersonKey) {
+                return;
+            }
+
+            const clipboardItems = Array.from((event.clipboardData && event.clipboardData.items) || []);
+            const imageFiles = clipboardItems
+                .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+                .map((item) => item.getAsFile())
+                .filter(Boolean);
+
+            const personKey = pendingPastePersonKey;
+            pendingPastePersonKey = null;
+
+            if (!imageFiles.length) {
+                alert('No screenshot image was found in pasted clipboard data.');
+                return;
+            }
+
+            event.preventDefault();
+
+            try {
+                const normalizedFiles = imageFiles.map((file) => {
+                    if (file.name) {
+                        return file;
+                    }
+                    return new File([file], buildScreenshotFileName(file.type), { type: file.type || 'image/png' });
+                });
+                await addAttachmentsFromFiles(personKey, normalizedFiles);
+            } catch (error) {
+                alert(error.message);
+            }
+        });
 
         function removeAttachment(personKey, attachmentId) {
             personAttachments[personKey] = personAttachments[personKey].filter((attachment) => attachment.id !== attachmentId);
@@ -1927,6 +2143,7 @@
             document.getElementById('discountRate').value = '5.0';
             initializeMainCurrencyInputs();
             normalizeMainCurrencyInputValues();
+            setupAttachmentDropZones();
             renderAllAttachmentLists();
         });
 
